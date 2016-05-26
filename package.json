@@ -1,0 +1,29 @@
+{
+  "name": "wadar",
+  "version": "1.0.0",
+  "description": "Web technology radar",
+  "scripts": {
+    "bundle": "browserify public_html/js/main.js -t [ babelify --presets [ es2015 react ] ] --outfile public_html/dist/js/bundle.js -v",
+    "watch": "watchify public_html/js/main.js -t [ babelify --presets [ es2015 react ] ] --outfile public_html/dist/js/bundle.js -v",
+    "serve": "php -S localhost:8080 -t public_html/"
+  },
+  "author": {
+    "name": "Lyubomir Raykov"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "babel-preset-es2015": "^6.3.13",
+    "babel-preset-react": "^6.5.0",
+    "babelify": "^7.2.0",
+    "browserify": "^12.0.1",
+    "react": "^15.1.0",
+    "react-dom": "^15.1.0",
+    "reactify": "^1.1.1",
+    "watchify": "^3.7.0"
+  },
+  "bundleDependencies": [
+    "babel-preset-es2015",
+    "babelify",
+    "browserify"
+  ]
+}
