@@ -19666,6 +19666,55 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 },{}],168:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Analyzer = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _technologies = require("./technologies");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Analyzer = exports.Analyzer = function () {
+  function Analyzer(text) {
+    _classCallCheck(this, Analyzer);
+
+    this.text = text;
+  }
+
+  _createClass(Analyzer, [{
+    key: "extractTechnologies",
+    value: function extractTechnologies() {
+      var _this = this;
+
+      var technologies = {};
+      Object.keys(_technologies.Technologies).forEach(function (key) {
+        var technologyType = key,
+            technologyList = _technologies.Technologies[key];
+        technologies[key] = {};
+        technologyList.forEach(function (technology) {
+          var re = new RegExp(technology, "g"),
+              technologyOccurences = (_this.text.match(re) || []).length;
+          technologies[key][technology] = technologyOccurences;
+        });
+      });
+      return technologies;
+    }
+  }, {
+    key: "technologies",
+    get: function get() {
+      return this.extractTechnologies();
+    }
+  }]);
+
+  return Analyzer;
+}();
+
+},{"./technologies":172}],169:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19679,6 +19728,8 @@ var _react = require('react');
 
 var _react2 = _interopRequireDefault(_react);
 
+var _analyzer = require('./analyzer');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -19690,10 +19741,15 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var App = exports.App = function (_React$Component) {
   _inherits(App, _React$Component);
 
-  function App() {
+  function App(props) {
     _classCallCheck(this, App);
 
-    return _possibleConstructorReturn(this, Object.getPrototypeOf(App).apply(this, arguments));
+    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
+
+    _this.state = {
+      enteredArticle: ''
+    };
+    return _this;
   }
 
   _createClass(App, [{
@@ -19726,24 +19782,37 @@ var App = exports.App = function (_React$Component) {
           _react2.default.createElement(
             'div',
             { className: 'panel-body' },
-            _react2.default.createElement('textarea', { className: 'form-control', rows: '10' })
+            _react2.default.createElement('textarea', { className: 'form-control', rows: '10', onChange: this.onTextChange.bind(this) })
           )
         ),
         _react2.default.createElement(
           'button',
-          { type: 'button', className: 'btn btn-default' },
+          { type: 'button', className: 'btn btn-default', onClick: this.analyzeText.bind(this) },
           'Давай'
         ),
         _react2.default.createElement('div', { id: 'radar' }),
         _react2.default.createElement('div', { id: 'ref-table' })
       );
     }
+  }, {
+    key: 'onTextChange',
+    value: function onTextChange(e) {
+      this.setState({
+        enteredArticle: e.target.value
+      });
+    }
+  }, {
+    key: 'analyzeText',
+    value: function analyzeText() {
+      var analyzer = new _analyzer.Analyzer(this.state.enteredArticle);
+      console.log(analyzer.technologies);
+    }
   }]);
 
   return App;
 }(_react2.default.Component);
 
-},{"react":166}],169:[function(require,module,exports){
+},{"./analyzer":168,"react":166}],170:[function(require,module,exports){
 'use strict';
 
 var _react = require('react');
@@ -19763,7 +19832,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
   _radar.Radar.init();
 })();
 
-},{"./app":168,"./radar":170,"react":166,"react-dom":1}],170:[function(require,module,exports){
+},{"./app":169,"./radar":171,"react":166,"react-dom":1}],171:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19813,4 +19882,24 @@ var Radar = exports.Radar = function () {
   return Radar;
 }();
 
-},{}]},{},[169]);
+},{}],172:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+// Carefully curated from the awesome list https://github.com/sindresorhus/awesome/blob/master/readme.md
+var Technologies = exports.Technologies = {
+  'Platforms': ['Node.js', 'Frontend Development', 'iOS', 'Android', 'IoT & Hybrid Apps', 'Electron', 'Cordova', 'React Native', 'Xamarin', 'Linux', 'Containers', 'OS X', 'Command-Line', 'Screensavers', 'watchOS', 'JVM', 'Salesforce', 'Amazon Web Services', 'Windows', 'IPFS', 'Fuse', 'Heroku'],
+  'Programming Languages': ['JavaScript', 'Swift', 'Python', 'Rust', 'Haskell', 'PureScript', 'Go', 'Scala', 'Ruby', 'Clojure', 'ClojureScript', 'Elixir', 'Elm', 'Erlang', 'Julia', 'Lua', 'C', 'R', 'D', 'Common Lisp', 'Perl', 'Groovy', 'Dart', 'Java', 'Kotlin', 'OCaml', 'Coldfusion', 'Fortran', '.NET', 'PHP', 'Delphi', 'Assembler', 'AutoHotkey', 'AutoIt', 'Crystal', 'TypeScript'],
+  'Frontend Development': ['ES6 Tools', 'Web Performance Optimization', 'Web Tools', 'CSS', 'React', 'Web Components', 'Polymer', 'Angular 2', 'Angular', 'Backbone', 'HTML5', 'SVG', 'Canvas', 'KnockoutJS', 'Dojo Toolkit', 'Inspiration', 'Ember', 'Android UI', 'iOS UI', 'Meteor', 'BEM', 'Flexbox', 'Web Typography', 'Web Accessibility', 'Material Design', 'D3', 'Emails', 'jQuery', 'Web Audio', 'Offline-First', 'Static Website Services', 'A-Frame VR', 'Cycle.js', 'Text Editing', 'Motion UI Design', 'Vue.js', 'Marionette.js', 'Aurelia', 'Charting', 'Ionic Framework 2', 'Chrome DevTools', 'PostCSS'],
+  'Backend Development': ['Django', 'Flask', 'Docker', 'Vagrant', 'Pyramid', 'Play1 Framework', 'CakePHP', 'Symfony', 'Laravel', 'Rails', 'Phalcon', 'nginx', 'Dropwizard', 'Kubernetes', 'Lumen'],
+  'Computer Science': ['University Courses', 'Data Science', 'Machine Learning', 'Speech and Natural Language Processing', 'Linguistics', 'Cryptography', 'Computer Vision', 'Deep Learning', 'Deep Vision', 'Open Source Society University', 'Functional Programming', 'Static Analysis & Code Quality', 'Software-Defined Networking'],
+  'Big Data': ['Big Data', 'Public Datasets', 'Hadoop', 'Data Engineering', 'Streaming'],
+  'Editors': ['Sublime Text', 'Vim', 'Emacs', 'Atom', 'Visual Studio Code'],
+  'Gaming': ['Game Development', 'Game Talks', 'Godot', 'Open Source Games', 'Unity', 'Chess', 'LÖVE', 'PICO-8'],
+  'Databases': ['Database', 'MySQL', 'SQLAlchemy', 'InfluxDB', 'Neo4j', 'Doctrine', 'MongoDB', 'RethinkDB'],
+  'Miscellaneous': ['JSON', 'Discounts for Student Developers', 'Slack', 'Conferences', 'GeoJSON', 'Sysadmin', 'Radio', 'Awesome', 'Analytics', 'Open Companies', 'REST', 'Selenium', 'Endangered Languages', 'Continuous Delivery', 'Services Engineering', 'Free for Developers', 'Bitcoin', 'Answers', 'Sketch', 'Places to Post Your Startup', 'PCAPTools', 'Remote Jobs', 'Boilerplate Projects', 'Readme', 'Tools', 'Styleguides', 'Design and Development Guides', 'Software Engineering Blogs', 'Self Hosted', 'FOSS Production Apps', 'Gulp', 'AMA', 'Open Source Photography', 'OpenGL', 'Productivity', 'GraphQL', 'Transit', 'Research Tools', 'Niche Job Boards', 'Data Visualization', 'Social Media Share Links', 'JSON Datasets', 'Microservices', 'Unicode Code Points', 'Internet of Things', 'Beginner-Friendly Projects', 'Bluetooth Beacons', 'Programming Interviews', 'Ripple', 'Katas', 'Tools for Activism', 'TAP', 'Robotics', 'MQTT', 'Hacking Spots', 'For Girls', 'Vorpal', 'OKR Methodology', 'Vulkan', 'LaTeX', 'Network Analysis', 'Economics', 'Electric Guitar Specifications', 'Funny Markov Chains']
+};
+
+},{}]},{},[170]);

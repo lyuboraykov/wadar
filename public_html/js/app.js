@@ -1,7 +1,16 @@
 import React from 'react';
 
+import {Analyzer} from './analyzer';
+
 
 export class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      enteredArticle: ''
+    };
+  }
+
   render() {
     return (<div className='container'>
       <div className='jumbotron'>
@@ -12,12 +21,23 @@ export class App extends React.Component {
           <h3 className='panel-title'>Въведи статия</h3>
         </div>
         <div className='panel-body'>
-          <textarea className='form-control' rows='10'></textarea>
+          <textarea className='form-control' rows='10' onChange={this.onTextChange.bind(this)}></textarea>
         </div>
       </div>
-      <button type="button" className="btn btn-default">Давай</button>
+      <button type="button" className="btn btn-default" onClick={this.analyzeText.bind(this)}>Давай</button>
       <div id='radar'></div>
       <div id='ref-table'></div>
     </div>);
+  }
+
+  onTextChange(e) {
+    this.setState({
+      enteredArticle: e.target.value
+    });
+  }
+
+  analyzeText() {
+    var analyzer = new Analyzer(this.state.enteredArticle);
+    console.log(analyzer.technologies);
   }
 }
