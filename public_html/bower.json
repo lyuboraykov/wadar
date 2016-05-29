@@ -1,0 +1,29 @@
+{
+  "name": "wadar",
+  "homepage": "https://github.com/lyuboraykov/wadar",
+  "authors": [
+    "Lyubomir Raykov <lyubo.raykov@gmail.com>"
+  ],
+  "description": "A techradar",
+  "main": "",
+  "moduleType": [],
+  "keywords": [
+    "tech",
+    "radar",
+    "wadar"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.6",
+    "chance": "~1.0.3",
+    "d3": "~3.5.17"
+  }
+}

@@ -1,9 +1,11 @@
 import React from 'react';
 
+
 export class App extends React.Component {
   render() {
     return (<div>
-      <h1>Hello wadar world!</h1>
+      <div id='radar'></div>
+      <div id='ref-table'></div>
     </div>);
   }
 }
