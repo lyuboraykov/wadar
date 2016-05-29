@@ -16,7 +16,7 @@ export class Analyzer {
           technologyList = Technologies[key];
       technologies[key] = {};
       technologyList.forEach(technology => {
-        let re = new RegExp(technology, "g"),
+        let re = new RegExp(' ' + technology + '[ \.,]', "g"),
             technologyOccurences = (this.text.match(re) || []).length;
         technologies[key][technology] = technologyOccurences;
       });

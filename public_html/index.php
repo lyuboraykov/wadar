@@ -11,6 +11,7 @@
   </head>
   <body>
       <div id="content"></div>
+      <script src="/bower_components/js-priority-queue/priority-queue.min.js"></script>
       <script src="/bower_components/chance/chance.js"></script>
       <script src="/bower_components/d3/d3.min.js"></script>
       <script src="/js/ext/tech-radar.min.js"></script>

@@ -1,6 +1,6 @@
 // Carefully curated from the awesome list https://github.com/sindresorhus/awesome/blob/master/readme.md
 export var Technologies = {
-  'Platforms': [
+  'Платформи': [
     'Node.js',
     'Frontend Development',
     'iOS',
@@ -24,7 +24,7 @@ export var Technologies = {
     'Fuse',
     'Heroku',
   ],
-  'Programming Languages': [
+  'Езици': [
     'JavaScript',
     'Swift',
     'Python',
@@ -62,7 +62,7 @@ export var Technologies = {
     'Crystal',
     'TypeScript',
   ],
-  'Frontend Development': [
+  'Интерфейс': [
     'ES6 Tools',
     'Web Performance Optimization',
     'Web Tools',
@@ -106,7 +106,7 @@ export var Technologies = {
     'Chrome DevTools',
     'PostCSS'
   ],
-  'Backend Development': [
+  'Бекенд': [
     'Django',
     'Flask',
     'Docker',
@@ -123,7 +123,7 @@ export var Technologies = {
     'Kubernetes',
     'Lumen'
   ],
-  'Computer Science': [
+  'Наука': [
     'University Courses',
     'Data Science',
     'Machine Learning',
@@ -145,14 +145,14 @@ export var Technologies = {
     'Data Engineering',
     'Streaming'
   ],
-  'Editors': [
+  'Редактори': [
     'Sublime Text',
     'Vim',
     'Emacs',
     'Atom',
     'Visual Studio Code'
   ],
-  'Gaming': [
+  'Игри': [
     'Game Development',
     'Game Talks',
     'Godot',
@@ -162,7 +162,7 @@ export var Technologies = {
     'LÖVE',
     'PICO-8'
   ],
-  'Databases': [
+  'Бази': [
     'Database',
     'MySQL',
     'SQLAlchemy',
@@ -172,7 +172,7 @@ export var Technologies = {
     'MongoDB',
     'RethinkDB'
   ],
-  'Miscellaneous': [
+  'Други': [
     'JSON',
     'Discounts for Student Developers',
     'Slack',

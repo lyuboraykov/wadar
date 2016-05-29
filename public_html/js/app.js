@@ -1,6 +1,7 @@
 import React from 'react';
 
 import {Analyzer} from './analyzer';
+import {Radar} from './radar';
 
 
 export class App extends React.Component {
@@ -38,6 +39,6 @@ export class App extends React.Component {
 
   analyzeText() {
     var analyzer = new Analyzer(this.state.enteredArticle);
-    console.log(analyzer.technologies);
+    Radar.draw(analyzer.technologies);
   }
 }

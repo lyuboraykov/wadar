@@ -19666,7 +19666,7 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 },{}],168:[function(require,module,exports){
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -19675,7 +19675,7 @@ exports.Analyzer = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _technologies = require("./technologies");
+var _technologies = require('./technologies');
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -19687,7 +19687,7 @@ var Analyzer = exports.Analyzer = function () {
   }
 
   _createClass(Analyzer, [{
-    key: "extractTechnologies",
+    key: 'extractTechnologies',
     value: function extractTechnologies() {
       var _this = this;
 
@@ -19697,7 +19697,7 @@ var Analyzer = exports.Analyzer = function () {
             technologyList = _technologies.Technologies[key];
         technologies[key] = {};
         technologyList.forEach(function (technology) {
-          var re = new RegExp(technology, "g"),
+          var re = new RegExp(' ' + technology + '[ \.,]', "g"),
               technologyOccurences = (_this.text.match(re) || []).length;
           technologies[key][technology] = technologyOccurences;
         });
@@ -19705,7 +19705,7 @@ var Analyzer = exports.Analyzer = function () {
       return technologies;
     }
   }, {
-    key: "technologies",
+    key: 'technologies',
     get: function get() {
       return this.extractTechnologies();
     }
@@ -19729,6 +19729,8 @@ var _react = require('react');
 var _react2 = _interopRequireDefault(_react);
 
 var _analyzer = require('./analyzer');
+
+var _radar = require('./radar');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19805,14 +19807,14 @@ var App = exports.App = function (_React$Component) {
     key: 'analyzeText',
     value: function analyzeText() {
       var analyzer = new _analyzer.Analyzer(this.state.enteredArticle);
-      console.log(analyzer.technologies);
+      _radar.Radar.draw(analyzer.technologies);
     }
   }]);
 
   return App;
 }(_react2.default.Component);
 
-},{"./analyzer":168,"react":166}],170:[function(require,module,exports){
+},{"./analyzer":168,"./radar":171,"react":166}],170:[function(require,module,exports){
 'use strict';
 
 var _react = require('react');
@@ -19823,16 +19825,13 @@ var _reactDom = require('react-dom');
 
 var _app = require('./app');
 
-var _radar = require('./radar');
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 (function () {
   (0, _reactDom.render)(_react2.default.createElement(_app.App, null), document.getElementById('content'));
-  _radar.Radar.init();
 })();
 
-},{"./app":169,"./radar":171,"react":166,"react-dom":1}],171:[function(require,module,exports){
+},{"./app":169,"react":166,"react-dom":1}],171:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19849,33 +19848,64 @@ var Radar = exports.Radar = function () {
   }
 
   _createClass(Radar, null, [{
-    key: 'init',
-    value: function init() {
-      var adopt = new tr.models.Cycle('Популярни', 0);
-      var assess = new tr.models.Cycle('Assess', 1);
-      var trial = new tr.models.Cycle('Тестови', 2);
-      var hold = new tr.models.Cycle('Издържали', 3);
+    key: 'draw',
+    value: function draw(technologies) {
+      var popular = new tr.models.Cycle('Популярни', 0),
+          trial = new tr.models.Cycle('Тестови', 1),
+          hold = new tr.models.Cycle('Издържали', 2),
+          radar = new tr.models.Radar(),
+          quadrantTechnologies = this.getQuadrantCategories(technologies);
 
-      var radar = new tr.models.Radar();
-      var toolsQuadrant = new tr.models.Quadrant('Инструменти');
-      var techniquesQuadrant = new tr.models.Quadrant('Похвати');
-      var platformsQuadrant = new tr.models.Quadrant('Платформи');
-      var languageFramework = new tr.models.Quadrant('Езици');
+      var quadrants = [];
+      Object.keys(quadrantTechnologies).forEach(function (category) {
+        var quadrant = new tr.models.Quadrant(category);
+        Object.keys(quadrantTechnologies[category]).forEach(function (technology) {
+          var type = trial;
+          if (quadrantTechnologies[category][technology] > 4) {
+            type = hold;
+          } else if (quadrantTechnologies[category][technology] > 2) {
+            type = popular;
+          } else if (quadrantTechnologies[category][technology] > 0) {
+            quadrant.add([new tr.models.Blip(technology, type, true)]);
+          }
+        });
+        quadrants.push(quadrant);
+      });
 
-      toolsQuadrant.add([new tr.models.Blip('D3', adopt), new tr.models.Blip('Dependency Management for JavaScript', adopt, true), new tr.models.Blip('Ansible', trial, true), new tr.models.Blip('Calabash', trial, true), new tr.models.Blip('Chaos Monkey', trial, true), new tr.models.Blip('Gatling', trial), new tr.models.Blip('Grunt.js', trial, true), new tr.models.Blip('Hystrix', trial), new tr.models.Blip('Icon fonts', trial), new tr.models.Blip('Librarian-puppet and Librarian-Chef', trial), new tr.models.Blip('Logstash & Graylog2', trial), new tr.models.Blip('Moco', trial, true), new tr.models.Blip('PhantomJS', trial), new tr.models.Blip('Prototype On Paper', trial, true)]);
-      techniquesQuadrant.add([new tr.models.Blip('Capturing client-side JavaScript errors', adopt), new tr.models.Blip('Continuous delivery for mobile devices', adopt), new tr.models.Blip('Mobile testing on mobile networks', adopt), new tr.models.Blip('Segregated DOM plus node for JS Testing', adopt, true), new tr.models.Blip('Windows infrastructure automation', adopt), new tr.models.Blip('Capture domain events explicitily', trial, true), new tr.models.Blip('Client and server rendering with same code', trial, true), new tr.models.Blip('HTML5 storage instead of cookies', trial), new tr.models.Blip('Instrument all the things', trial, true), new tr.models.Blip('Masterless Chef/Puppet', trial, true), new tr.models.Blip('Micro-services', trial), new tr.models.Blip('Perimeterless enterprise', trial), new tr.models.Blip('Provisioning testing', trial, true), new tr.models.Blip('Structured logging', trial, true)]);
-      platformsQuadrant.add([new tr.models.Blip('Elastic Search', adopt), new tr.models.Blip('MongoDB', adopt), new tr.models.Blip('Neo4J', adopt), new tr.models.Blip('Node.js', adopt), new tr.models.Blip('Redis', adopt), new tr.models.Blip('SMS and USSD as UI', adopt), new tr.models.Blip('Hadoop 2.0', trial), new tr.models.Blip('Hadoop as a service', trial, true), new tr.models.Blip('Open Stack', trial), new tr.models.Blip('PostgreSQL for NoSql', trial)]);
-      languageFramework.add([new tr.models.Blip('Clojure', adopt, true), new tr.models.Blip('Dropwizard', adopt), new tr.models.Blip('Scala, the good parts', adopt), new tr.models.Blip('Sinatra', adopt), new tr.models.Blip('CoffeeScript', trial), new tr.models.Blip('Go language', trial, true), new tr.models.Blip('Hive', trial, true), new tr.models.Blip('Play Framework 2', trial), new tr.models.Blip('Reactive Extensions across languages', trial, true)]);
-
-      radar.setFirstQuadrant(toolsQuadrant);
-      radar.setSecondQuadrant(techniquesQuadrant);
-      radar.setThirdQuadrant(platformsQuadrant);
-      radar.setFourthQuadrant(languageFramework);
+      radar.setFirstQuadrant(quadrants[0]);
+      radar.setSecondQuadrant(quadrants[1]);
+      radar.setThirdQuadrant(quadrants[2]);
+      radar.setFourthQuadrant(quadrants[3]);
 
       var radarGraph = new tr.graphing.Radar(500, radar);
       radarGraph.init('#radar').plot();
       var refTable = new tr.graphing.RefTable(radar);
       refTable.init('#ref-table').render();
+    }
+  }, {
+    key: 'getQuadrantCategories',
+    value: function getQuadrantCategories(technologies) {
+      var compareCategories = function compareCategories(c1, c2) {
+        return c2.count - c1.count;
+      };
+      var categoryQueue = new PriorityQueue({ comparator: compareCategories });
+
+      Object.keys(technologies).forEach(function (category) {
+        var currentCount = 0;
+        Object.keys(technologies[category]).forEach(function (technology) {
+          currentCount += technologies[category][technology];
+        });
+        categoryQueue.queue({
+          name: category,
+          count: currentCount
+        });
+      });
+      var quadrantCategories = {};
+      for (var i = 0; i < 4; i++) {
+        var currentCatName = categoryQueue.dequeue().name;
+        quadrantCategories[currentCatName] = technologies[currentCatName];
+      }
+      return quadrantCategories;
     }
   }]);
 
@@ -19890,16 +19920,16 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Carefully curated from the awesome list https://github.com/sindresorhus/awesome/blob/master/readme.md
 var Technologies = exports.Technologies = {
-  'Platforms': ['Node.js', 'Frontend Development', 'iOS', 'Android', 'IoT & Hybrid Apps', 'Electron', 'Cordova', 'React Native', 'Xamarin', 'Linux', 'Containers', 'OS X', 'Command-Line', 'Screensavers', 'watchOS', 'JVM', 'Salesforce', 'Amazon Web Services', 'Windows', 'IPFS', 'Fuse', 'Heroku'],
-  'Programming Languages': ['JavaScript', 'Swift', 'Python', 'Rust', 'Haskell', 'PureScript', 'Go', 'Scala', 'Ruby', 'Clojure', 'ClojureScript', 'Elixir', 'Elm', 'Erlang', 'Julia', 'Lua', 'C', 'R', 'D', 'Common Lisp', 'Perl', 'Groovy', 'Dart', 'Java', 'Kotlin', 'OCaml', 'Coldfusion', 'Fortran', '.NET', 'PHP', 'Delphi', 'Assembler', 'AutoHotkey', 'AutoIt', 'Crystal', 'TypeScript'],
-  'Frontend Development': ['ES6 Tools', 'Web Performance Optimization', 'Web Tools', 'CSS', 'React', 'Web Components', 'Polymer', 'Angular 2', 'Angular', 'Backbone', 'HTML5', 'SVG', 'Canvas', 'KnockoutJS', 'Dojo Toolkit', 'Inspiration', 'Ember', 'Android UI', 'iOS UI', 'Meteor', 'BEM', 'Flexbox', 'Web Typography', 'Web Accessibility', 'Material Design', 'D3', 'Emails', 'jQuery', 'Web Audio', 'Offline-First', 'Static Website Services', 'A-Frame VR', 'Cycle.js', 'Text Editing', 'Motion UI Design', 'Vue.js', 'Marionette.js', 'Aurelia', 'Charting', 'Ionic Framework 2', 'Chrome DevTools', 'PostCSS'],
-  'Backend Development': ['Django', 'Flask', 'Docker', 'Vagrant', 'Pyramid', 'Play1 Framework', 'CakePHP', 'Symfony', 'Laravel', 'Rails', 'Phalcon', 'nginx', 'Dropwizard', 'Kubernetes', 'Lumen'],
-  'Computer Science': ['University Courses', 'Data Science', 'Machine Learning', 'Speech and Natural Language Processing', 'Linguistics', 'Cryptography', 'Computer Vision', 'Deep Learning', 'Deep Vision', 'Open Source Society University', 'Functional Programming', 'Static Analysis & Code Quality', 'Software-Defined Networking'],
+  'Платформи': ['Node.js', 'Frontend Development', 'iOS', 'Android', 'IoT & Hybrid Apps', 'Electron', 'Cordova', 'React Native', 'Xamarin', 'Linux', 'Containers', 'OS X', 'Command-Line', 'Screensavers', 'watchOS', 'JVM', 'Salesforce', 'Amazon Web Services', 'Windows', 'IPFS', 'Fuse', 'Heroku'],
+  'Езици': ['JavaScript', 'Swift', 'Python', 'Rust', 'Haskell', 'PureScript', 'Go', 'Scala', 'Ruby', 'Clojure', 'ClojureScript', 'Elixir', 'Elm', 'Erlang', 'Julia', 'Lua', 'C', 'R', 'D', 'Common Lisp', 'Perl', 'Groovy', 'Dart', 'Java', 'Kotlin', 'OCaml', 'Coldfusion', 'Fortran', '.NET', 'PHP', 'Delphi', 'Assembler', 'AutoHotkey', 'AutoIt', 'Crystal', 'TypeScript'],
+  'Интерфейс': ['ES6 Tools', 'Web Performance Optimization', 'Web Tools', 'CSS', 'React', 'Web Components', 'Polymer', 'Angular 2', 'Angular', 'Backbone', 'HTML5', 'SVG', 'Canvas', 'KnockoutJS', 'Dojo Toolkit', 'Inspiration', 'Ember', 'Android UI', 'iOS UI', 'Meteor', 'BEM', 'Flexbox', 'Web Typography', 'Web Accessibility', 'Material Design', 'D3', 'Emails', 'jQuery', 'Web Audio', 'Offline-First', 'Static Website Services', 'A-Frame VR', 'Cycle.js', 'Text Editing', 'Motion UI Design', 'Vue.js', 'Marionette.js', 'Aurelia', 'Charting', 'Ionic Framework 2', 'Chrome DevTools', 'PostCSS'],
+  'Бекенд': ['Django', 'Flask', 'Docker', 'Vagrant', 'Pyramid', 'Play1 Framework', 'CakePHP', 'Symfony', 'Laravel', 'Rails', 'Phalcon', 'nginx', 'Dropwizard', 'Kubernetes', 'Lumen'],
+  'Наука': ['University Courses', 'Data Science', 'Machine Learning', 'Speech and Natural Language Processing', 'Linguistics', 'Cryptography', 'Computer Vision', 'Deep Learning', 'Deep Vision', 'Open Source Society University', 'Functional Programming', 'Static Analysis & Code Quality', 'Software-Defined Networking'],
   'Big Data': ['Big Data', 'Public Datasets', 'Hadoop', 'Data Engineering', 'Streaming'],
-  'Editors': ['Sublime Text', 'Vim', 'Emacs', 'Atom', 'Visual Studio Code'],
-  'Gaming': ['Game Development', 'Game Talks', 'Godot', 'Open Source Games', 'Unity', 'Chess', 'LÖVE', 'PICO-8'],
-  'Databases': ['Database', 'MySQL', 'SQLAlchemy', 'InfluxDB', 'Neo4j', 'Doctrine', 'MongoDB', 'RethinkDB'],
-  'Miscellaneous': ['JSON', 'Discounts for Student Developers', 'Slack', 'Conferences', 'GeoJSON', 'Sysadmin', 'Radio', 'Awesome', 'Analytics', 'Open Companies', 'REST', 'Selenium', 'Endangered Languages', 'Continuous Delivery', 'Services Engineering', 'Free for Developers', 'Bitcoin', 'Answers', 'Sketch', 'Places to Post Your Startup', 'PCAPTools', 'Remote Jobs', 'Boilerplate Projects', 'Readme', 'Tools', 'Styleguides', 'Design and Development Guides', 'Software Engineering Blogs', 'Self Hosted', 'FOSS Production Apps', 'Gulp', 'AMA', 'Open Source Photography', 'OpenGL', 'Productivity', 'GraphQL', 'Transit', 'Research Tools', 'Niche Job Boards', 'Data Visualization', 'Social Media Share Links', 'JSON Datasets', 'Microservices', 'Unicode Code Points', 'Internet of Things', 'Beginner-Friendly Projects', 'Bluetooth Beacons', 'Programming Interviews', 'Ripple', 'Katas', 'Tools for Activism', 'TAP', 'Robotics', 'MQTT', 'Hacking Spots', 'For Girls', 'Vorpal', 'OKR Methodology', 'Vulkan', 'LaTeX', 'Network Analysis', 'Economics', 'Electric Guitar Specifications', 'Funny Markov Chains']
+  'Редактори': ['Sublime Text', 'Vim', 'Emacs', 'Atom', 'Visual Studio Code'],
+  'Игри': ['Game Development', 'Game Talks', 'Godot', 'Open Source Games', 'Unity', 'Chess', 'LÖVE', 'PICO-8'],
+  'Бази': ['Database', 'MySQL', 'SQLAlchemy', 'InfluxDB', 'Neo4j', 'Doctrine', 'MongoDB', 'RethinkDB'],
+  'Други': ['JSON', 'Discounts for Student Developers', 'Slack', 'Conferences', 'GeoJSON', 'Sysadmin', 'Radio', 'Awesome', 'Analytics', 'Open Companies', 'REST', 'Selenium', 'Endangered Languages', 'Continuous Delivery', 'Services Engineering', 'Free for Developers', 'Bitcoin', 'Answers', 'Sketch', 'Places to Post Your Startup', 'PCAPTools', 'Remote Jobs', 'Boilerplate Projects', 'Readme', 'Tools', 'Styleguides', 'Design and Development Guides', 'Software Engineering Blogs', 'Self Hosted', 'FOSS Production Apps', 'Gulp', 'AMA', 'Open Source Photography', 'OpenGL', 'Productivity', 'GraphQL', 'Transit', 'Research Tools', 'Niche Job Boards', 'Data Visualization', 'Social Media Share Links', 'JSON Datasets', 'Microservices', 'Unicode Code Points', 'Internet of Things', 'Beginner-Friendly Projects', 'Bluetooth Beacons', 'Programming Interviews', 'Ripple', 'Katas', 'Tools for Activism', 'TAP', 'Robotics', 'MQTT', 'Hacking Spots', 'For Girls', 'Vorpal', 'OKR Methodology', 'Vulkan', 'LaTeX', 'Network Analysis', 'Economics', 'Electric Guitar Specifications', 'Funny Markov Chains']
 };
 
 },{}]},{},[170]);
