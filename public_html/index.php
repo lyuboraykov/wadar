@@ -1,7 +1,13 @@
 <!doctype HTML >
 <html>
   <head>
-    <link rel="stylesheet" type="text/css" href="/css/ext/tech-radar.css" />
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link rel="stylesheet" type="text/css" href="/css/ext/tech-radar.css" />
+      <link rel="stylesheet" type="text/css" href="/css/main.css" />
+      <link rel="stylesheet" type="text/css" href="/bower_components/bootstrap/dist/css/bootstrap.min.css" />
+      <link rel="stylesheet" type="text/css" href="/bower_components/bootstrap/dist/css/bootstrap-theme.min.css" />
   </head>
   <body>
       <div id="content"></div>
