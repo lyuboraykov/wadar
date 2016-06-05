@@ -2,7 +2,7 @@
 require './lib/firebase.php';
 $firebase = getFirebase();
 
-$value = $_POST(['radar']);
+$value = json_decode(file_get_contents('php://input'), true);
 
-$firebase->set($value);
+$firebase->set($value, '/');
 ?>

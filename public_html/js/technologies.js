@@ -1,7 +1,6 @@
-// Carefully curated from the awesome list https://github.com/sindresorhus/awesome/blob/master/readme.md
 export var Technologies = {
   'Платформи': [
-    'Node.js',
+    'Nodejs',
     'Frontend Development',
     'iOS',
     'Android',
@@ -50,7 +49,7 @@ export var Technologies = {
     'OCaml',
     'Coldfusion',
     'Fortran',
-    '.NET',
+    'NET',
     'PHP',
     'Delphi',
     'Assembler',
@@ -92,11 +91,11 @@ export var Technologies = {
     'Offline-First',
     'Static Website Services',
     'A-Frame VR',
-    'Cycle.js',
+    'Cyclejs',
     'Text Editing',
     'Motion UI Design',
-    'Vue.js',
-    'Marionette.js',
+    'Vuejs',
+    'Marionettejs',
     'Aurelia',
     'Charting',
     'Ionic Framework 2',

@@ -19666,6 +19666,395 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 },{}],168:[function(require,module,exports){
+"use strict";
+var window = require("global/window")
+var once = require("once")
+var isFunction = require("is-function")
+var parseHeaders = require("parse-headers")
+var xtend = require("xtend")
+
+module.exports = createXHR
+createXHR.XMLHttpRequest = window.XMLHttpRequest || noop
+createXHR.XDomainRequest = "withCredentials" in (new createXHR.XMLHttpRequest()) ? createXHR.XMLHttpRequest : window.XDomainRequest
+
+forEachArray(["get", "put", "post", "patch", "head", "delete"], function(method) {
+    createXHR[method === "delete" ? "del" : method] = function(uri, options, callback) {
+        options = initParams(uri, options, callback)
+        options.method = method.toUpperCase()
+        return _createXHR(options)
+    }
+})
+
+function forEachArray(array, iterator) {
+    for (var i = 0; i < array.length; i++) {
+        iterator(array[i])
+    }
+}
+
+function isEmpty(obj){
+    for(var i in obj){
+        if(obj.hasOwnProperty(i)) return false
+    }
+    return true
+}
+
+function initParams(uri, options, callback) {
+    var params = uri
+
+    if (isFunction(options)) {
+        callback = options
+        if (typeof uri === "string") {
+            params = {uri:uri}
+        }
+    } else {
+        params = xtend(options, {uri: uri})
+    }
+
+    params.callback = callback
+    return params
+}
+
+function createXHR(uri, options, callback) {
+    options = initParams(uri, options, callback)
+    return _createXHR(options)
+}
+
+function _createXHR(options) {
+    var callback = options.callback
+    if(typeof callback === "undefined"){
+        throw new Error("callback argument missing")
+    }
+    callback = once(callback)
+
+    function readystatechange() {
+        if (xhr.readyState === 4) {
+            loadFunc()
+        }
+    }
+
+    function getBody() {
+        // Chrome with requestType=blob throws errors arround when even testing access to responseText
+        var body = undefined
+
+        if (xhr.response) {
+            body = xhr.response
+        } else if (xhr.responseType === "text" || !xhr.responseType) {
+            body = xhr.responseText || xhr.responseXML
+        }
+
+        if (isJson) {
+            try {
+                body = JSON.parse(body)
+            } catch (e) {}
+        }
+
+        return body
+    }
+
+    var failureResponse = {
+                body: undefined,
+                headers: {},
+                statusCode: 0,
+                method: method,
+                url: uri,
+                rawRequest: xhr
+            }
+
+    function errorFunc(evt) {
+        clearTimeout(timeoutTimer)
+        if(!(evt instanceof Error)){
+            evt = new Error("" + (evt || "Unknown XMLHttpRequest Error") )
+        }
+        evt.statusCode = 0
+        callback(evt, failureResponse)
+    }
+
+    // will load the data & process the response in a special response object
+    function loadFunc() {
+        if (aborted) return
+        var status
+        clearTimeout(timeoutTimer)
+        if(options.useXDR && xhr.status===undefined) {
+            //IE8 CORS GET successful response doesn't have a status field, but body is fine
+            status = 200
+        } else {
+            status = (xhr.status === 1223 ? 204 : xhr.status)
+        }
+        var response = failureResponse
+        var err = null
+
+        if (status !== 0){
+            response = {
+                body: getBody(),
+                statusCode: status,
+                method: method,
+                headers: {},
+                url: uri,
+                rawRequest: xhr
+            }
+            if(xhr.getAllResponseHeaders){ //remember xhr can in fact be XDR for CORS in IE
+                response.headers = parseHeaders(xhr.getAllResponseHeaders())
+            }
+        } else {
+            err = new Error("Internal XMLHttpRequest Error")
+        }
+        callback(err, response, response.body)
+
+    }
+
+    var xhr = options.xhr || null
+
+    if (!xhr) {
+        if (options.cors || options.useXDR) {
+            xhr = new createXHR.XDomainRequest()
+        }else{
+            xhr = new createXHR.XMLHttpRequest()
+        }
+    }
+
+    var key
+    var aborted
+    var uri = xhr.url = options.uri || options.url
+    var method = xhr.method = options.method || "GET"
+    var body = options.body || options.data || null
+    var headers = xhr.headers = options.headers || {}
+    var sync = !!options.sync
+    var isJson = false
+    var timeoutTimer
+
+    if ("json" in options) {
+        isJson = true
+        headers["accept"] || headers["Accept"] || (headers["Accept"] = "application/json") //Don't override existing accept header declared by user
+        if (method !== "GET" && method !== "HEAD") {
+            headers["content-type"] || headers["Content-Type"] || (headers["Content-Type"] = "application/json") //Don't override existing accept header declared by user
+            body = JSON.stringify(options.json)
+        }
+    }
+
+    xhr.onreadystatechange = readystatechange
+    xhr.onload = loadFunc
+    xhr.onerror = errorFunc
+    // IE9 must have onprogress be set to a unique function.
+    xhr.onprogress = function () {
+        // IE must die
+    }
+    xhr.ontimeout = errorFunc
+    xhr.open(method, uri, !sync, options.username, options.password)
+    //has to be after open
+    if(!sync) {
+        xhr.withCredentials = !!options.withCredentials
+    }
+    // Cannot set timeout with sync request
+    // not setting timeout on the xhr object, because of old webkits etc. not handling that correctly
+    // both npm's request and jquery 1.x use this kind of timeout, so this is being consistent
+    if (!sync && options.timeout > 0 ) {
+        timeoutTimer = setTimeout(function(){
+            aborted=true//IE9 may still call readystatechange
+            xhr.abort("timeout")
+            var e = new Error("XMLHttpRequest timeout")
+            e.code = "ETIMEDOUT"
+            errorFunc(e)
+        }, options.timeout )
+    }
+
+    if (xhr.setRequestHeader) {
+        for(key in headers){
+            if(headers.hasOwnProperty(key)){
+                xhr.setRequestHeader(key, headers[key])
+            }
+        }
+    } else if (options.headers && !isEmpty(options.headers)) {
+        throw new Error("Headers cannot be set on an XDomainRequest object")
+    }
+
+    if ("responseType" in options) {
+        xhr.responseType = options.responseType
+    }
+
+    if ("beforeSend" in options &&
+        typeof options.beforeSend === "function"
+    ) {
+        options.beforeSend(xhr)
+    }
+
+    xhr.send(body)
+
+    return xhr
+
+
+}
+
+function noop() {}
+
+},{"global/window":169,"is-function":170,"once":171,"parse-headers":174,"xtend":175}],169:[function(require,module,exports){
+(function (global){
+if (typeof window !== "undefined") {
+    module.exports = window;
+} else if (typeof global !== "undefined") {
+    module.exports = global;
+} else if (typeof self !== "undefined"){
+    module.exports = self;
+} else {
+    module.exports = {};
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],170:[function(require,module,exports){
+module.exports = isFunction
+
+var toString = Object.prototype.toString
+
+function isFunction (fn) {
+  var string = toString.call(fn)
+  return string === '[object Function]' ||
+    (typeof fn === 'function' && string !== '[object RegExp]') ||
+    (typeof window !== 'undefined' &&
+     // IE8 and below
+     (fn === window.setTimeout ||
+      fn === window.alert ||
+      fn === window.confirm ||
+      fn === window.prompt))
+};
+
+},{}],171:[function(require,module,exports){
+module.exports = once
+
+once.proto = once(function () {
+  Object.defineProperty(Function.prototype, 'once', {
+    value: function () {
+      return once(this)
+    },
+    configurable: true
+  })
+})
+
+function once (fn) {
+  var called = false
+  return function () {
+    if (called) return
+    called = true
+    return fn.apply(this, arguments)
+  }
+}
+
+},{}],172:[function(require,module,exports){
+var isFunction = require('is-function')
+
+module.exports = forEach
+
+var toString = Object.prototype.toString
+var hasOwnProperty = Object.prototype.hasOwnProperty
+
+function forEach(list, iterator, context) {
+    if (!isFunction(iterator)) {
+        throw new TypeError('iterator must be a function')
+    }
+
+    if (arguments.length < 3) {
+        context = this
+    }
+    
+    if (toString.call(list) === '[object Array]')
+        forEachArray(list, iterator, context)
+    else if (typeof list === 'string')
+        forEachString(list, iterator, context)
+    else
+        forEachObject(list, iterator, context)
+}
+
+function forEachArray(array, iterator, context) {
+    for (var i = 0, len = array.length; i < len; i++) {
+        if (hasOwnProperty.call(array, i)) {
+            iterator.call(context, array[i], i, array)
+        }
+    }
+}
+
+function forEachString(string, iterator, context) {
+    for (var i = 0, len = string.length; i < len; i++) {
+        // no such thing as a sparse string.
+        iterator.call(context, string.charAt(i), i, string)
+    }
+}
+
+function forEachObject(object, iterator, context) {
+    for (var k in object) {
+        if (hasOwnProperty.call(object, k)) {
+            iterator.call(context, object[k], k, object)
+        }
+    }
+}
+
+},{"is-function":170}],173:[function(require,module,exports){
+
+exports = module.exports = trim;
+
+function trim(str){
+  return str.replace(/^\s*|\s*$/g, '');
+}
+
+exports.left = function(str){
+  return str.replace(/^\s*/, '');
+};
+
+exports.right = function(str){
+  return str.replace(/\s*$/, '');
+};
+
+},{}],174:[function(require,module,exports){
+var trim = require('trim')
+  , forEach = require('for-each')
+  , isArray = function(arg) {
+      return Object.prototype.toString.call(arg) === '[object Array]';
+    }
+
+module.exports = function (headers) {
+  if (!headers)
+    return {}
+
+  var result = {}
+
+  forEach(
+      trim(headers).split('\n')
+    , function (row) {
+        var index = row.indexOf(':')
+          , key = trim(row.slice(0, index)).toLowerCase()
+          , value = trim(row.slice(index + 1))
+
+        if (typeof(result[key]) === 'undefined') {
+          result[key] = value
+        } else if (isArray(result[key])) {
+          result[key].push(value)
+        } else {
+          result[key] = [ result[key], value ]
+        }
+      }
+  )
+
+  return result
+}
+},{"for-each":172,"trim":173}],175:[function(require,module,exports){
+module.exports = extend
+
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+
+function extend() {
+    var target = {}
+
+    for (var i = 0; i < arguments.length; i++) {
+        var source = arguments[i]
+
+        for (var key in source) {
+            if (hasOwnProperty.call(source, key)) {
+                target[key] = source[key]
+            }
+        }
+    }
+
+    return target
+}
+
+},{}],176:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19714,7 +20103,7 @@ var Analyzer = exports.Analyzer = function () {
   return Analyzer;
 }();
 
-},{"./technologies":172}],169:[function(require,module,exports){
+},{"./technologies":181}],177:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19731,6 +20120,8 @@ var _react2 = _interopRequireDefault(_react);
 var _analyzer = require('./analyzer');
 
 var _radar = require('./radar');
+
+var _firebaseClient = require('./firebase-client');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19749,7 +20140,8 @@ var App = exports.App = function (_React$Component) {
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
 
     _this.state = {
-      enteredArticle: ''
+      enteredArticle: '',
+      message: ''
     };
     return _this;
   }
@@ -19788,9 +20180,24 @@ var App = exports.App = function (_React$Component) {
           )
         ),
         _react2.default.createElement(
+          'h3',
+          { isRendered: this.state.message !== '' },
+          this.state.message
+        ),
+        _react2.default.createElement(
           'button',
-          { type: 'button', className: 'btn btn-default', onClick: this.analyzeText.bind(this) },
-          'Давай'
+          { type: 'button', className: 'btn btn-default', onClick: this.drawLocalAnalytics.bind(this) },
+          'Анализ на текста'
+        ),
+        _react2.default.createElement(
+          'button',
+          { type: 'button', className: 'btn btn-primary', onClick: this.drawGlobalAnalytics.bind(this) },
+          'Всички резултати'
+        ),
+        _react2.default.createElement(
+          'button',
+          { type: 'button', className: 'btn btn-info', onClick: this.submitAnalytics.bind(this) },
+          'Изпрати резултат'
         ),
         _react2.default.createElement('div', { id: 'radar' }),
         _react2.default.createElement('div', { id: 'ref-table' })
@@ -19804,17 +20211,125 @@ var App = exports.App = function (_React$Component) {
       });
     }
   }, {
-    key: 'analyzeText',
-    value: function analyzeText() {
+    key: 'drawGlobalAnalytics',
+    value: function drawGlobalAnalytics() {
+      _firebaseClient.FireBaseClient.getTechnologies(this.renderAnalytics, this.errorConnectingToDB.bind(this));
+    }
+  }, {
+    key: 'renderAnalytics',
+    value: function renderAnalytics(technologies) {
+      _radar.Radar.draw(technologies);
+    }
+  }, {
+    key: 'errorConnectingToDB',
+    value: function errorConnectingToDB(err) {
+      this.showTemporaryMessage('Неуспешна връзка с базата данни: ' + err);
+    }
+  }, {
+    key: 'drawLocalAnalytics',
+    value: function drawLocalAnalytics() {
       var analyzer = new _analyzer.Analyzer(this.state.enteredArticle);
       _radar.Radar.draw(analyzer.technologies);
+    }
+  }, {
+    key: 'submitAnalytics',
+    value: function submitAnalytics() {
+      var analyzer = new _analyzer.Analyzer(this.state.enteredArticle),
+          currentTechnologies = analyzer.technologies;
+      _firebaseClient.FireBaseClient.getTechnologies(this.doSubmitAnalytics.bind(this, currentTechnologies), this.errorConnectingToDB.bind(this));
+    }
+  }, {
+    key: 'doSubmitAnalytics',
+    value: function doSubmitAnalytics(currentTechnologies, globalTechnologies) {
+      var technologies = {};
+      Object.keys(globalTechnologies).forEach(function (category) {
+        technologies[category] = {};
+        Object.keys(globalTechnologies[category]).forEach(function (technology) {
+          var globalCount = globalTechnologies[category][technology],
+              currentCount = currentTechnologies[category][technology];
+          technologies[category][technology] = globalCount + currentCount;
+        });
+      });
+      _firebaseClient.FireBaseClient.submitTechnologies(technologies, this.successSubmittingTechnologies.bind(this), this.errorConnectingToDB.bind(this));
+    }
+  }, {
+    key: 'successSubmittingTechnologies',
+    value: function successSubmittingTechnologies() {
+      this.showTemporaryMessage('Успешно изпратен!');
+    }
+  }, {
+    key: 'showTemporaryMessage',
+    value: function showTemporaryMessage(msg) {
+      var _this2 = this;
+
+      this.setState({
+        message: msg
+      });
+      setTimeout(function () {
+        _this2.setState({
+          message: ''
+        });
+      }, 1000);
     }
   }]);
 
   return App;
 }(_react2.default.Component);
 
-},{"./analyzer":168,"./radar":171,"react":166}],170:[function(require,module,exports){
+},{"./analyzer":176,"./firebase-client":178,"./radar":180,"react":166}],178:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var xhr = require('xhr');
+
+var FireBaseClient = exports.FireBaseClient = function () {
+  function FireBaseClient() {
+    _classCallCheck(this, FireBaseClient);
+  }
+
+  _createClass(FireBaseClient, null, [{
+    key: 'getTechnologies',
+    value: function getTechnologies(onSuccess, onError) {
+      var path = '/get-global-radar.php';
+      xhr.get(path, function (err, data) {
+        if (err || data.statusCode > 299 || data.statusCode < 200) {
+          return onError(data);
+        }
+        return onSuccess(JSON.parse(data.body));
+      });
+    }
+  }, {
+    key: 'submitTechnologies',
+    value: function submitTechnologies(technologies, onSuccess, onError) {
+      var path = '/submit-radar.php';
+
+      xhr({
+        uri: path,
+        body: JSON.stringify(technologies),
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }, function (err, data) {
+        if (err || data.statusCode > 299 || data.statusCode < 200) {
+          return onError(data);
+        }
+        return onSuccess(data.body);
+      });
+    }
+  }]);
+
+  return FireBaseClient;
+}();
+
+},{"xhr":168}],179:[function(require,module,exports){
 'use strict';
 
 var _react = require('react');
@@ -19831,7 +20346,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
   (0, _reactDom.render)(_react2.default.createElement(_app.App, null), document.getElementById('content'));
 })();
 
-},{"./app":169,"react":166,"react-dom":1}],171:[function(require,module,exports){
+},{"./app":177,"react":166,"react-dom":1}],180:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -19921,17 +20436,16 @@ var Radar = exports.Radar = function () {
   return Radar;
 }();
 
-},{}],172:[function(require,module,exports){
+},{}],181:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-// Carefully curated from the awesome list https://github.com/sindresorhus/awesome/blob/master/readme.md
 var Technologies = exports.Technologies = {
-  'Платформи': ['Node.js', 'Frontend Development', 'iOS', 'Android', 'IoT & Hybrid Apps', 'Electron', 'Cordova', 'React Native', 'Xamarin', 'Linux', 'Containers', 'OS X', 'Command-Line', 'Screensavers', 'watchOS', 'JVM', 'Salesforce', 'Amazon Web Services', 'Windows', 'IPFS', 'Fuse', 'Heroku'],
-  'Езици': ['JavaScript', 'Swift', 'Python', 'Rust', 'Haskell', 'PureScript', 'Go', 'Scala', 'Ruby', 'Clojure', 'ClojureScript', 'Elixir', 'Elm', 'Erlang', 'Julia', 'Lua', 'Common Lisp', 'Perl', 'Groovy', 'Dart', 'Java', 'Kotlin', 'OCaml', 'Coldfusion', 'Fortran', '.NET', 'PHP', 'Delphi', 'Assembler', 'AutoHotkey', 'AutoIt', 'Crystal', 'TypeScript'],
-  'Интерфейс': ['ES6 Tools', 'Web Performance Optimization', 'Web Tools', 'CSS', 'React', 'Web Components', 'Polymer', 'Angular 2', 'Angular', 'Backbone', 'HTML5', 'SVG', 'Canvas', 'KnockoutJS', 'Dojo Toolkit', 'Inspiration', 'Ember', 'Android UI', 'iOS UI', 'Meteor', 'BEM', 'Flexbox', 'Web Typography', 'Web Accessibility', 'Material Design', 'D3', 'Emails', 'jQuery', 'Web Audio', 'Offline-First', 'Static Website Services', 'A-Frame VR', 'Cycle.js', 'Text Editing', 'Motion UI Design', 'Vue.js', 'Marionette.js', 'Aurelia', 'Charting', 'Ionic Framework 2', 'Chrome DevTools', 'PostCSS'],
+  'Платформи': ['Nodejs', 'Frontend Development', 'iOS', 'Android', 'IoT & Hybrid Apps', 'Electron', 'Cordova', 'React Native', 'Xamarin', 'Linux', 'Containers', 'OS X', 'Command-Line', 'Screensavers', 'watchOS', 'JVM', 'Salesforce', 'Amazon Web Services', 'Windows', 'IPFS', 'Fuse', 'Heroku'],
+  'Езици': ['JavaScript', 'Swift', 'Python', 'Rust', 'Haskell', 'PureScript', 'Go', 'Scala', 'Ruby', 'Clojure', 'ClojureScript', 'Elixir', 'Elm', 'Erlang', 'Julia', 'Lua', 'Common Lisp', 'Perl', 'Groovy', 'Dart', 'Java', 'Kotlin', 'OCaml', 'Coldfusion', 'Fortran', 'NET', 'PHP', 'Delphi', 'Assembler', 'AutoHotkey', 'AutoIt', 'Crystal', 'TypeScript'],
+  'Интерфейс': ['ES6 Tools', 'Web Performance Optimization', 'Web Tools', 'CSS', 'React', 'Web Components', 'Polymer', 'Angular 2', 'Angular', 'Backbone', 'HTML5', 'SVG', 'Canvas', 'KnockoutJS', 'Dojo Toolkit', 'Inspiration', 'Ember', 'Android UI', 'iOS UI', 'Meteor', 'BEM', 'Flexbox', 'Web Typography', 'Web Accessibility', 'Material Design', 'D3', 'Emails', 'jQuery', 'Web Audio', 'Offline-First', 'Static Website Services', 'A-Frame VR', 'Cyclejs', 'Text Editing', 'Motion UI Design', 'Vuejs', 'Marionettejs', 'Aurelia', 'Charting', 'Ionic Framework 2', 'Chrome DevTools', 'PostCSS'],
   'Бекенд': ['Django', 'Flask', 'Docker', 'Vagrant', 'Pyramid', 'Play1 Framework', 'CakePHP', 'Symfony', 'Laravel', 'Rails', 'Phalcon', 'nginx', 'Dropwizard', 'Kubernetes', 'Lumen'],
   'Наука': ['University Courses', 'Data Science', 'Machine Learning', 'Speech and Natural Language Processing', 'Linguistics', 'Cryptography', 'Computer Vision', 'Deep Learning', 'Deep Vision', 'Open Source Society University', 'Functional Programming', 'Static Analysis & Code Quality', 'Software-Defined Networking'],
   'Big Data': ['Big Data', 'Public Datasets', 'Hadoop', 'Data Engineering', 'Streaming'],
@@ -19941,4 +20455,4 @@ var Technologies = exports.Technologies = {
   'Други': ['JSON', 'Discounts for Student Developers', 'Slack', 'Conferences', 'GeoJSON', 'Sysadmin', 'Radio', 'Awesome', 'Analytics', 'Open Companies', 'REST', 'Selenium', 'Endangered Languages', 'Continuous Delivery', 'Services Engineering', 'Free for Developers', 'Bitcoin', 'Answers', 'Sketch', 'Places to Post Your Startup', 'PCAPTools', 'Remote Jobs', 'Boilerplate Projects', 'Readme', 'Tools', 'Styleguides', 'Design and Development Guides', 'Software Engineering Blogs', 'Self Hosted', 'FOSS Production Apps', 'Gulp', 'AMA', 'Open Source Photography', 'OpenGL', 'Productivity', 'GraphQL', 'Transit', 'Research Tools', 'Niche Job Boards', 'Data Visualization', 'Social Media Share Links', 'JSON Datasets', 'Microservices', 'Unicode Code Points', 'Internet of Things', 'Beginner-Friendly Projects', 'Bluetooth Beacons', 'Programming Interviews', 'Ripple', 'Katas', 'Tools for Activism', 'TAP', 'Robotics', 'MQTT', 'Hacking Spots', 'For Girls', 'Vorpal', 'OKR Methodology', 'Vulkan', 'LaTeX', 'Network Analysis', 'Economics', 'Electric Guitar Specifications', 'Funny Markov Chains']
 };
 
-},{}]},{},[170]);
+},{}]},{},[179]);

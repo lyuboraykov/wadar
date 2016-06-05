@@ -1,3 +1,7 @@
 #radar {
   margin-top: 10px;
 }
+
+button:not(:first-child) {
+  margin-left:10px;
+}
