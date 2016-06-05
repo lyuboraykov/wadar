@@ -19697,7 +19697,7 @@ var Analyzer = exports.Analyzer = function () {
             technologyList = _technologies.Technologies[key];
         technologies[key] = {};
         technologyList.forEach(function (technology) {
-          var re = new RegExp(' ' + technology + '[ \.,]', "g"),
+          var re = new RegExp('[ ]*' + technology + '[ \.,]+', "g"),
               technologyOccurences = (_this.text.match(re) || []).length;
           technologies[key][technology] = technologyOccurences;
         });
@@ -19850,9 +19850,9 @@ var Radar = exports.Radar = function () {
   _createClass(Radar, null, [{
     key: 'draw',
     value: function draw(technologies) {
-      var popular = new tr.models.Cycle('Популярни', 0),
-          trial = new tr.models.Cycle('Тестови', 1),
-          hold = new tr.models.Cycle('Издържали', 2),
+      var hold = new tr.models.Cycle('Вечни', 0),
+          popular = new tr.models.Cycle('Връх', 1),
+          trial = new tr.models.Cycle('Нови', 2),
           radar = new tr.models.Radar(),
           quadrantTechnologies = this.getQuadrantCategories(technologies);
 
@@ -19860,12 +19860,14 @@ var Radar = exports.Radar = function () {
       Object.keys(quadrantTechnologies).forEach(function (category) {
         var quadrant = new tr.models.Quadrant(category);
         Object.keys(quadrantTechnologies[category]).forEach(function (technology) {
-          var type = trial;
-          if (quadrantTechnologies[category][technology] > 4) {
+          var type = trial,
+              currentCount = quadrantTechnologies[category][technology];
+          if (currentCount > 4) {
             type = hold;
-          } else if (quadrantTechnologies[category][technology] > 2) {
+          } else if (currentCount > 2) {
             type = popular;
-          } else if (quadrantTechnologies[category][technology] > 0) {
+          }
+          if (currentCount > 0) {
             quadrant.add([new tr.models.Blip(technology, type, true)]);
           }
         });
@@ -19878,6 +19880,7 @@ var Radar = exports.Radar = function () {
       radar.setFourthQuadrant(quadrants[3]);
 
       var radarGraph = new tr.graphing.Radar(500, radar);
+      this.cleanRadarElements();
       radarGraph.init('#radar').plot();
       var refTable = new tr.graphing.RefTable(radar);
       refTable.init('#ref-table').render();
@@ -19907,6 +19910,12 @@ var Radar = exports.Radar = function () {
       }
       return quadrantCategories;
     }
+  }, {
+    key: 'cleanRadarElements',
+    value: function cleanRadarElements() {
+      document.getElementById('radar').innerHTML = '';
+      document.getElementById('ref-table').innerHTML = '';
+    }
   }]);
 
   return Radar;
@@ -19921,7 +19930,7 @@ Object.defineProperty(exports, "__esModule", {
 // Carefully curated from the awesome list https://github.com/sindresorhus/awesome/blob/master/readme.md
 var Technologies = exports.Technologies = {
   'Платформи': ['Node.js', 'Frontend Development', 'iOS', 'Android', 'IoT & Hybrid Apps', 'Electron', 'Cordova', 'React Native', 'Xamarin', 'Linux', 'Containers', 'OS X', 'Command-Line', 'Screensavers', 'watchOS', 'JVM', 'Salesforce', 'Amazon Web Services', 'Windows', 'IPFS', 'Fuse', 'Heroku'],
-  'Езици': ['JavaScript', 'Swift', 'Python', 'Rust', 'Haskell', 'PureScript', 'Go', 'Scala', 'Ruby', 'Clojure', 'ClojureScript', 'Elixir', 'Elm', 'Erlang', 'Julia', 'Lua', 'C', 'R', 'D', 'Common Lisp', 'Perl', 'Groovy', 'Dart', 'Java', 'Kotlin', 'OCaml', 'Coldfusion', 'Fortran', '.NET', 'PHP', 'Delphi', 'Assembler', 'AutoHotkey', 'AutoIt', 'Crystal', 'TypeScript'],
+  'Езици': ['JavaScript', 'Swift', 'Python', 'Rust', 'Haskell', 'PureScript', 'Go', 'Scala', 'Ruby', 'Clojure', 'ClojureScript', 'Elixir', 'Elm', 'Erlang', 'Julia', 'Lua', 'Common Lisp', 'Perl', 'Groovy', 'Dart', 'Java', 'Kotlin', 'OCaml', 'Coldfusion', 'Fortran', '.NET', 'PHP', 'Delphi', 'Assembler', 'AutoHotkey', 'AutoIt', 'Crystal', 'TypeScript'],
   'Интерфейс': ['ES6 Tools', 'Web Performance Optimization', 'Web Tools', 'CSS', 'React', 'Web Components', 'Polymer', 'Angular 2', 'Angular', 'Backbone', 'HTML5', 'SVG', 'Canvas', 'KnockoutJS', 'Dojo Toolkit', 'Inspiration', 'Ember', 'Android UI', 'iOS UI', 'Meteor', 'BEM', 'Flexbox', 'Web Typography', 'Web Accessibility', 'Material Design', 'D3', 'Emails', 'jQuery', 'Web Audio', 'Offline-First', 'Static Website Services', 'A-Frame VR', 'Cycle.js', 'Text Editing', 'Motion UI Design', 'Vue.js', 'Marionette.js', 'Aurelia', 'Charting', 'Ionic Framework 2', 'Chrome DevTools', 'PostCSS'],
   'Бекенд': ['Django', 'Flask', 'Docker', 'Vagrant', 'Pyramid', 'Play1 Framework', 'CakePHP', 'Symfony', 'Laravel', 'Rails', 'Phalcon', 'nginx', 'Dropwizard', 'Kubernetes', 'Lumen'],
   'Наука': ['University Courses', 'Data Science', 'Machine Learning', 'Speech and Natural Language Processing', 'Linguistics', 'Cryptography', 'Computer Vision', 'Deep Learning', 'Deep Vision', 'Open Source Society University', 'Functional Programming', 'Static Analysis & Code Quality', 'Software-Defined Networking'],

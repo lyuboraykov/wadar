@@ -1,22 +1,23 @@
 export class Radar {
   static draw(technologies) {
-    let popular = new tr.models.Cycle('Популярни', 0),
-        trial = new tr.models.Cycle('Тестови', 1),
-        hold = new tr.models.Cycle('Издържали', 2),
-
-        radar = new tr.models.Radar(),
-        quadrantTechnologies = this.getQuadrantCategories(technologies);
+      let hold = new tr.models.Cycle('Вечни', 0),
+          popular = new tr.models.Cycle('Връх', 1),
+          trial = new tr.models.Cycle('Нови', 2),
+          radar = new tr.models.Radar(),
+          quadrantTechnologies = this.getQuadrantCategories(technologies);
 
     let quadrants = [];
     Object.keys(quadrantTechnologies).forEach(category => {
       let quadrant = new tr.models.Quadrant(category);
       Object.keys(quadrantTechnologies[category]).forEach(technology => {
-        let type = trial;
-        if (quadrantTechnologies[category][technology] > 4) {
+        let type = trial,
+            currentCount = quadrantTechnologies[category][technology];
+        if (currentCount > 4) {
           type = hold;
-        } else if (quadrantTechnologies[category][technology] > 2) {
+        } else if (currentCount > 2) {
           type = popular;
-        } else if (quadrantTechnologies[category][technology] > 0) {
+        }
+        if (currentCount > 0) {
           quadrant.add([
             new tr.models.Blip(technology, type, true)
           ]);
@@ -31,6 +32,7 @@ export class Radar {
     radar.setFourthQuadrant(quadrants[3]);
 
     let radarGraph = new tr.graphing.Radar(500, radar);
+    this.cleanRadarElements();
     radarGraph.init('#radar').plot();
     let refTable = new tr.graphing.RefTable(radar);
     refTable.init('#ref-table').render();
@@ -58,5 +60,10 @@ export class Radar {
       quadrantCategories[currentCatName] = technologies[currentCatName];
     }
     return quadrantCategories;
+  }
+
+  static cleanRadarElements() {
+    document.getElementById('radar').innerHTML = '';
+    document.getElementById('ref-table').innerHTML = '';
   }
 }
