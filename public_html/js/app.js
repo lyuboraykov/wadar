@@ -10,11 +10,17 @@ export class App extends React.Component {
     super(props);
     this.state = {
       enteredArticle: '',
-      message: ''
+      message: '',
+      isLoading: true
     };
   }
 
   render() {
+    setTimeout(() => {
+      this.setState({
+        isLoading: false
+      });
+    }, 2000);
     return (<div className='container'>
       <div className='jumbotron'>
         <h1>Вадар</h1>
@@ -27,7 +33,12 @@ export class App extends React.Component {
           <textarea className='form-control' rows='10' onChange={this.onTextChange.bind(this)}></textarea>
         </div>
       </div>
-      <h3 isRendered={this.state.message !== ''}>{this.state.message}</h3>
+      <h3>{this.state.message}</h3>
+      {
+        this.state.isLoading ? (
+          <div className="glyphicon glyphicon-refresh glyphicon-refresh-animate"></div>
+        ) : null
+      }
       <button type="button" className="btn btn-default" onClick={this.drawLocalAnalytics.bind(this)}>
         Анализ на текста
       </button>
@@ -49,15 +60,18 @@ export class App extends React.Component {
   }
 
   drawGlobalAnalytics() {
-    FireBaseClient.getTechnologies(this.renderAnalytics,
+    this.setState({isLoading: true});
+    FireBaseClient.getTechnologies(this.renderAnalytics.bind(this),
                                    this.errorConnectingToDB.bind(this));
   }
 
   renderAnalytics(technologies) {
     Radar.draw(technologies);
+    this.setState({isLoading: false});
   }
 
   errorConnectingToDB(err) {
+    this.setState({isLoading: false});
     this.showTemporaryMessage(`Неуспешна връзка с базата данни: ${err}`);
   }
 
@@ -69,6 +83,7 @@ export class App extends React.Component {
   submitAnalytics() {
     let analyzer = new Analyzer(this.state.enteredArticle),
         currentTechnologies = analyzer.technologies;
+    this.setState({isLoading: true});
     FireBaseClient.getTechnologies(this.doSubmitAnalytics.bind(this, currentTechnologies),
                                    this.errorConnectingToDB.bind(this));
   }
@@ -83,12 +98,14 @@ export class App extends React.Component {
         technologies[category][technology] = globalCount + currentCount;
       });
     });
+    this.setState({isLoading: true});
     FireBaseClient.submitTechnologies(technologies,
                                       this.successSubmittingTechnologies.bind(this),
                                       this.errorConnectingToDB.bind(this));
   }
 
   successSubmittingTechnologies() {
+    this.setState({isLoading: false});
     this.showTemporaryMessage('Успешно изпратен!');
   }
 

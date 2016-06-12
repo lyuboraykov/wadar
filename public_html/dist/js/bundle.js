@@ -20141,7 +20141,8 @@ var App = exports.App = function (_React$Component) {
 
     _this.state = {
       enteredArticle: '',
-      message: ''
+      message: '',
+      isLoading: true
     };
     return _this;
   }
@@ -20149,6 +20150,13 @@ var App = exports.App = function (_React$Component) {
   _createClass(App, [{
     key: 'render',
     value: function render() {
+      var _this2 = this;
+
+      setTimeout(function () {
+        _this2.setState({
+          isLoading: false
+        });
+      }, 2000);
       return _react2.default.createElement(
         'div',
         { className: 'container' },
@@ -20181,9 +20189,10 @@ var App = exports.App = function (_React$Component) {
         ),
         _react2.default.createElement(
           'h3',
-          { isRendered: this.state.message !== '' },
+          null,
           this.state.message
         ),
+        this.state.isLoading ? _react2.default.createElement('div', { className: 'glyphicon glyphicon-refresh glyphicon-refresh-animate' }) : null,
         _react2.default.createElement(
           'button',
           { type: 'button', className: 'btn btn-default', onClick: this.drawLocalAnalytics.bind(this) },
@@ -20213,16 +20222,19 @@ var App = exports.App = function (_React$Component) {
   }, {
     key: 'drawGlobalAnalytics',
     value: function drawGlobalAnalytics() {
-      _firebaseClient.FireBaseClient.getTechnologies(this.renderAnalytics, this.errorConnectingToDB.bind(this));
+      this.setState({ isLoading: true });
+      _firebaseClient.FireBaseClient.getTechnologies(this.renderAnalytics.bind(this), this.errorConnectingToDB.bind(this));
     }
   }, {
     key: 'renderAnalytics',
     value: function renderAnalytics(technologies) {
       _radar.Radar.draw(technologies);
+      this.setState({ isLoading: false });
     }
   }, {
     key: 'errorConnectingToDB',
     value: function errorConnectingToDB(err) {
+      this.setState({ isLoading: false });
       this.showTemporaryMessage('Неуспешна връзка с базата данни: ' + err);
     }
   }, {
@@ -20236,6 +20248,7 @@ var App = exports.App = function (_React$Component) {
     value: function submitAnalytics() {
       var analyzer = new _analyzer.Analyzer(this.state.enteredArticle),
           currentTechnologies = analyzer.technologies;
+      this.setState({ isLoading: true });
       _firebaseClient.FireBaseClient.getTechnologies(this.doSubmitAnalytics.bind(this, currentTechnologies), this.errorConnectingToDB.bind(this));
     }
   }, {
@@ -20250,23 +20263,25 @@ var App = exports.App = function (_React$Component) {
           technologies[category][technology] = globalCount + currentCount;
         });
       });
+      this.setState({ isLoading: true });
       _firebaseClient.FireBaseClient.submitTechnologies(technologies, this.successSubmittingTechnologies.bind(this), this.errorConnectingToDB.bind(this));
     }
   }, {
     key: 'successSubmittingTechnologies',
     value: function successSubmittingTechnologies() {
+      this.setState({ isLoading: false });
       this.showTemporaryMessage('Успешно изпратен!');
     }
   }, {
     key: 'showTemporaryMessage',
     value: function showTemporaryMessage(msg) {
-      var _this2 = this;
+      var _this3 = this;
 
       this.setState({
         message: msg
       });
       setTimeout(function () {
-        _this2.setState({
+        _this3.setState({
           message: ''
         });
       }, 1000);
