@@ -2,6 +2,12 @@ University homework for web technologies, simple tech radar
 
 ## Installation
 
+```
+Warning: PHP 7 is required
+```
+
+Quick tutorial in using Firebase: https://www.firebase.com/docs/rest/quickstart.html
+
 The project uses several package managers to handle dependencies.
 These include:
  - npm
@@ -14,8 +20,8 @@ cd public_html
 bower install
 php composer.phar install
 cd ..
-npm serve  # leave this in the terminal
-npm watch  # exec this in a different terminal
+npm run serve  # leave this in the terminal
+npm run watch  # exec this in a different terminal
 ```
 
 Then go to `http://localhost:8080`.

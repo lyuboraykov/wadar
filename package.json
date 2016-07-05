@@ -5,7 +5,7 @@
   "scripts": {
     "bundle": "browserify public_html/js/main.js -t [ babelify --presets [ es2015 react ] ] --outfile public_html/dist/js/bundle.js -v",
     "watch": "watchify public_html/js/main.js -t [ babelify --presets [ es2015 react ] ] --outfile public_html/dist/js/bundle.js -v",
-    "serve": "php -S localhost:8080 -t public_html/"
+    "serve": "php -S localhost:8080 -t public_html"
   },
   "author": {
     "name": "Lyubomir Raykov"
